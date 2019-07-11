@@ -735,14 +735,15 @@ class ProcessElement implements Runnable {
                            try
                            {
                                rs2 = stmt2.executeQuery(sql);
+                               
+                                System.out.println(threadName + " **** Executed sql statement 2nd time ");  
                            }
                            catch (SQLException e)
                            {
                                 System.out.println(threadName + " **** Exception executing sql statement 2nd time ");    
 
                                e.toString();
-                           }
-                           System.out.println(threadName + " **** Executed sql statement 2nd time ");    
+                           }  
 
 
                             try
