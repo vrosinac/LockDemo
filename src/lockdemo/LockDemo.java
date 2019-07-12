@@ -41,7 +41,7 @@ public class LockDemo {
 
        if (input.isEmpty())
        {
-            input = "C:\\JavaProjects\\LockDemo\\envs00022.xml"; 
+            input = "C:\\JavaProjects\\LockDemo\\envs00022b.xml"; 
        
        }
        if (output.isEmpty())
@@ -242,7 +242,9 @@ class result
     boolean up;
     String vers;
     String timeStamp;
-    
+    String zoneVisitors;
+    String globalVisitors;
+    int nVisitors;
     public result(result res)  // copy constructor
     {
         this.up = res.up;
@@ -254,8 +256,25 @@ class result
         this.up = up;
         this.vers = vers;
         this.timeStamp = timeStamp;
+        this.zoneVisitors = "";
+        this.globalVisitors = "";
+        this.nVisitors =0;
     }
     
+     public result(boolean up, String vers, String timeStamp, int nVisitors,  String zoneVisitors, String globalVisitors)
+     {
+         this.up = up;
+         this.vers = new String(vers.toString());
+         this.timeStamp = new String(timeStamp.toString());
+         this.zoneVisitors = new String(zoneVisitors.toString());
+         this.globalVisitors = new String(globalVisitors.toString());
+         this.nVisitors = nVisitors;
+     }
+     
+     
+     
+     
+     
      public void populate(boolean up, String vers, String timeStamp)
      {
          this.up = up;
@@ -263,6 +282,7 @@ class result
          this.timeStamp = new String(timeStamp.toString());
      
      }
+     
      public boolean isup()
      {
          return this.up;
@@ -332,10 +352,13 @@ class ProcessElement implements Runnable {
     // do some connection (twice) and prepare some HTML string
 
    threadName = Thread.currentThread().getName();
-    sout =  "<table style=\"width:50%\">";   
+    sout =  "<table style=\"width:100%\">";   
     sout = sout + "<colgroup>";   
-    sout = sout + "<col  width=\"25%\" style=\"background-color:lightgrey\"  >";  
+    sout = sout + "<col  width=\"23%\" style=\"background-color:lightgrey\"  >";  
     sout = sout + "<col  width=\"25%\"  style=\"background-color:white\"  >";   
+// additioonal columsn for the visitors
+    sout = sout + "<col  width=\"7%\"  style=\"background-color:white\"  >";   
+    sout = sout + "<col  width=\"45%\"  style=\"background-color:white\"  >";   
     sout = sout + "</colgroup>";   
 
 
@@ -385,8 +408,50 @@ class ProcessElement implements Runnable {
      sout = sout + "<br>zone2_password : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + zone2_password;
      sout = sout + "</details>"; 
      sout = sout + "</th>";
+    //// visitors/////////////////
+    if(retval.nVisitors >0)
+    {
+         if (retval.nVisitors <3)
+         {
+            sout = sout + "<th align=\"left\" style=\"background-color:yellow\" >" + " &nbsp; busy &nbsp;    " + "</th>";sout = sout + "<th>";
+         }
+         if (retval.nVisitors >=3 && retval.nVisitors <=7 )
+         {
+            sout = sout + "<th align=\"left\" style=\"background-color:orange\" >" + " &nbsp; busy &nbsp;    " + "</th>";sout = sout + "<th>";
+         }
+         if (retval.nVisitors >7)
+         {
+            sout = sout + "<th align=\"left\" style=\"background-color:red\" >" + " &nbsp; busy &nbsp;    " + "</th>"; sout = sout + "<th>";
+         }
+         
+         sout = sout + "<details align=\"left\"  >"; 
+         sout = sout + "<summary>" + "detail of users curently logged in" + "</summary>";   
+         sout = sout + "<br>" + retval.globalVisitors + "</a>" ;
+         sout = sout + "<br>" + retval.zoneVisitors + "</a>" ;
+    } 
+    else
+    { // only if the system is up and is not older than 2.8
+      if (retval.up && (!retval.vers.equals("&nbsp; &nbsp; database up")))
+      {  
+         sout = sout + "<th align=\"left\" style=\"background-color:lightgreen\" >" + " &nbsp; free &nbsp;    " + "</th>";sout = sout + "<th>";
+         sout = sout + "<details align=\"left\"  >"; 
+         sout = sout + "<summary>" +  "&nbsp;" + "</summary>";   
+         sout = sout + "<br>" + "&nbsp;" + "</a>" ;
+      }
+      else
+      {
+         sout = sout + "<th align=\"left\"  >" + " &nbsp;  &nbsp;    " + "</th>";sout = sout + "<th>";
+         sout = sout + "<details align=\"left\"  >"; 
+         sout = sout + "<summary>" +  "&nbsp;" + "</summary>";   
+         sout = sout + "<br>" + "&nbsp;" + "</a>" ;
+      }
+      
+    }
+    sout = sout + "</th>";
+    
 
-
+/////////////////////////////
+     
     sout = sout + "</table >";
        // add the text to the HTML string of the paage (on going building of the string through all the threads)
     myHTMLGenerator.addToHTMLString(sout);
@@ -409,6 +474,22 @@ class ProcessElement implements Runnable {
         System.out.println(threadName + " url: " + url );
         try
         {
+             System.out.println(threadName + " **** Try ...");
+            if (dbType.equals("MsSQLServer"))
+            {
+                 System.out.println(threadName + " **** do not Try \"MsSQL server...");
+
+                //try{
+                    //Class.forName("net.sourceforge.jtds.jdbc.Driver");
+                    System.out.println(threadName + " **** Called Class.forName(\"MsSQL server...");
+                //}
+                //catch (ClassNotFoundException e)
+                //{
+                 //   System.out.println(threadName + " **** Exceptopn in called Class.forName(\"MsSQL server...");
+                  //    e.toString();
+                //}
+
+            }
             if (dbType.equals("DB2") || dbType.equals("DB2ForTI229") ){
                 try
                  {
@@ -505,7 +586,7 @@ class ProcessElement implements Runnable {
             }
             else
             {
-               returnvalue = new result(false, "&nbsp; &nbsp; system down","");
+               returnvalue = new result(false, "&nbsp;  system down","");
                return returnvalue;    
             }
             try
@@ -707,7 +788,8 @@ class ProcessElement implements Runnable {
                            System.out.println(threadName + " **** sleep for 12 s.");   
                            try
                            {
-                               sleep(12000);
+                               //sleep(12000);
+                               sleep(70000);
                            }
                            catch (InterruptedException e)
                            {
@@ -825,7 +907,7 @@ class ProcessElement implements Runnable {
                                e.printStackTrace();
                            }    
                        }
-                  }////// end if second pass     
+                  }///-----------------  end second pass  ---------------------     
                    else
                    {
                        System.out.println(threadName + " **** no need for  sql statement 2nt time, nothing up ");
@@ -838,8 +920,34 @@ class ProcessElement implements Runnable {
                boolean areweup = (answers[0].isup() || answers[1].isup() || answers[2].isup());
                if (areweup)
                {
-                    System.out.println(threadName areweup+ " **** we're up ");  
-                    returnvalue = new result( ,answers[0].vers + answers[1].vers + answers[2].vers, "" );
+                   
+                   //  -----------------  3rd pass -- to check if there are people logged into the system
+                    int countVisitors = 0;
+                   String sqlZones = "select b.username,  b.IP_ADDRESS, a.ZONE_ID, a.created from " + schema + ".local_Session_details a, " + schema +".central_Session_details b where  a.CENTRAL_ID  =  b.CENTRAL_ID  and  a.ZONE_ID <> ''  and a.ENDED IS NULL ORDER BY ZONE_ID";
+                  // String sqlGlobal = "select USERNAME, IP_ADDRESS, CREATED from " + schema + ".CENTRAL_SESSION_DETAILS where ENDED IS NULL ";
+                   rs1 = stmt.executeQuery(sqlZones);
+                   String ZoneVisitors="", GlobalVisitors="";  
+                   // check zones
+                   while ( rs1.next()) 
+                   {
+                       countVisitors ++;
+                       ZoneVisitors =ZoneVisitors +  rs1.getString(1) + "&nbsp; " + rs1.getString(2) + "&nbsp; " + rs1.getString(3) + "&nbsp; " + rs1.getString(4) + "<br>";
+                   }
+                  
+                   // do one for global
+                   /*
+                   rs1 = stmt.executeQuery(sqlGlobal);
+                   while ( rs1.next()) 
+                   {
+                       countVisitors++;
+                       GlobalVisitors =GlobalVisitors +  rs1.getString(1) + "&nbsp; " + rs1.getString(2) + "&nbsp; " + "GLOBAL &nbsp; " + rs1.getString(3) +  "<br>";
+                   }
+                   */
+                   
+                   //////////// return values
+                   
+                    System.out.println(threadName + " **** we're up ");  
+                    returnvalue = new result(areweup ,answers[0].vers + answers[1].vers + answers[2].vers, "", countVisitors, ZoneVisitors, "" /* GlobalVisitors*/ );
                 
                }
                else
