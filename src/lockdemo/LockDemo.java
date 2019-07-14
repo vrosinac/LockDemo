@@ -41,7 +41,7 @@ public class LockDemo {
 
        if (input.isEmpty())
        {
-            input = "C:\\JavaProjects\\LockDemo\\envs00022b.xml"; 
+            input = "C:\\JavaProjects\\LockDemo\\envs.xml"; 
        
        }
        if (output.isEmpty())
@@ -101,6 +101,21 @@ public class LockDemo {
            
                 ElementFields eltfields = new ElementFields();
                 eltfields.environmentName=  eElement.getElementsByTagName("environmentName").item(0).getTextContent();
+                
+                // the next three tags are optional
+                if(eElement.getElementsByTagName("protected_owner").item(0) != null)
+                {
+                    eltfields.protected_owner=  eElement.getElementsByTagName("protected_owner").item(0).getTextContent();
+                }
+                if(eElement.getElementsByTagName("protected_user").item(0) != null)
+                {
+                    eltfields.protected_user=  eElement.getElementsByTagName("protected_user").item(0).getTextContent();
+                }
+                if(eElement.getElementsByTagName("protected_comment").item(0) != null)
+                {
+                    eltfields.protected_comment=  eElement.getElementsByTagName("protected_comment").item(0).getTextContent();
+                }
+               
                 eltfields.database_type=  eElement.getElementsByTagName("database_type").item(0).getTextContent();
                 eltfields.schema =   eElement.getElementsByTagName("schema").item(0).getTextContent();
                 eltfields.global_login =   eElement.getElementsByTagName("global_login").item(0).getTextContent();
@@ -112,7 +127,6 @@ public class LockDemo {
                 eltfields.password = eElement.getElementsByTagName("password").item(0).getTextContent();
                 eltfields.RDP =  eElement.getElementsByTagName("RDP").item(0).getTextContent();
                 eltfields.admin_console = eElement.getElementsByTagName("admin_console").item(0).getTextContent()  ;
-                eltfields.database_type =  eElement.getElementsByTagName("database_type").item(0).getTextContent();
                 eltfields.database_url = eElement.getElementsByTagName("database_url").item(0).getTextContent();
                 eltfields.version = eElement.getElementsByTagName("version").item(0).getTextContent();
                 eltfields.zone1_login = eElement.getElementsByTagName("zone1_login").item(0).getTextContent();
@@ -315,14 +329,16 @@ class ProcessElement implements Runnable {
     String zone1_password ;
     String zone2_login;
     String zone2_password ;
-    
+    String protected_owner;
+    String protected_user;
+    String protected_comment;
    
     public ProcessElement(ElementFields elements, HTMLGenerator counter, int myId) {
     id = myId;
     environmentName = elements.environmentName;
     database_url = elements.database_url;  // we make sure we allocate memory for this here as we want our own copy of this
     
-    System.out.println("DB url to pass to thread " + id + ": " +database_url);
+    System.out.println("DB url to pass to Thread" + id + ": " +database_url);
    database_type= elements.database_type;  // we make sure we allocate memory for this here as we want our own copy of this
     schema= elements.schema;
     env_name= elements.env_name ;
@@ -341,8 +357,11 @@ class ProcessElement implements Runnable {
     zone1_password= elements.zone1_password ;
     zone2_login= elements.zone2_login;
     zone2_password= elements.zone2_password ; // because at a higher level thsi elt passed to us keeps being overwriten
-       myHTMLGenerator = counter;
-       // store parameter for later user
+    myHTMLGenerator = counter;
+    protected_owner = elements.protected_owner;
+    protected_user = elements.protected_user;
+    protected_comment = elements.protected_comment;
+    // store parameter for later user
    }
 
    public void run() 
@@ -385,27 +404,37 @@ class ProcessElement implements Runnable {
       sout = sout + "<details align=\"left\"  >"; 
      sout = sout + "<summary>" + retval.vers + "</summary>";   
      sout = sout + "<br>url : <a href=\""    + url + "\">" + url + "</a>" ;
-     sout = sout + "<br>login : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + login;
-     sout = sout + "<br>password : "   +    "<font face=\"calibri\" weigt=\"normal\">" + password;
-     sout = sout + "<br><br>RDP : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + RDP;
-     sout = sout + "<br>admin_console : <a href=\""    + admin_console + "\">" + admin_console + "</a>" ;
-     sout = sout + "<br><br>database_type : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + database_type;
-     sout = sout + "<br>database_url : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + database_url;
-
-     if ( retval.up)
-     {
-         sout = sout + "<br><br> up-to-date  versions : "  +    "<font face=\"calibri\" weigt=\"normal\">"  + retval.vers;
+     
+     if (protected_owner == null) // no need to keep it protected
+     {    
+        sout = sout + "<br>login : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + login;
+        sout = sout + "<br>password : "   +    "<font face=\"calibri\" weigt=\"normal\">" + password;
+        sout = sout + "<br><br>RDP : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + RDP;
+        sout = sout + "<br>admin_console : <a href=\""    + admin_console + "\">" + admin_console + "</a>" ;
+        sout = sout + "<br><br>database_type : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + database_type;
+        sout = sout + "<br>database_url : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + database_url;
+        sout = sout + "<br><br>global_login : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + global_login;
+        sout = sout + "<br>global_password : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + global_password;
+        sout = sout + "<br>zone1_login : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + zone1_login;
+        sout = sout + "<br>zone1_password : "  +    "<font face=\"calibri\" weigt=\"normal\">"   + zone1_password;
+        sout = sout + "<br>zone2_login : "  +    "<font face=\"calibri\" weigt=\"normal\">"   + zone2_login;
+        sout = sout + "<br>zone2_password : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + zone2_password;
      }
      else
      {
-         sout = sout + "<br><br>version : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + version;
+            sout = sout + "<br>Env owned by  "   +  protected_owner +   " <font face=\"calibri\" weigt=\"normal\">"  ;
+     
+            if (!protected_user.isEmpty())
+            {
+                sout = sout + "<br>use user: " + protected_user +  " <font face=\"calibri\" weigt=\"normal\">"  ;
+     
+            }
+             if (!protected_comment.isEmpty())
+            {
+                sout = sout + "<br>" + protected_comment +  " <font face=\"calibri\" weigt=\"normal\">"  ;
+     
+            }
      }
-     sout = sout + "<br><br>global_login : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + global_login;
-     sout = sout + "<br>global_password : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + global_password;
-     sout = sout + "<br>zone1_login : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + zone1_login;
-     sout = sout + "<br>zone1_password : "  +    "<font face=\"calibri\" weigt=\"normal\">"   + zone1_password;
-     sout = sout + "<br>zone2_login : "  +    "<font face=\"calibri\" weigt=\"normal\">"   + zone2_login;
-     sout = sout + "<br>zone2_password : "   +    "<font face=\"calibri\" weigt=\"normal\">"  + zone2_password;
      sout = sout + "</details>"; 
      sout = sout + "</th>";
     //// visitors/////////////////
@@ -663,7 +692,7 @@ class ProcessElement implements Runnable {
                     {
                         System.out.println(threadName + " **** EXCEPTON executing sql statement 1st time ");    
                        // e.toString();
-                        e.printStackTrace();
+                        e.toString  ();
                     }
 
                      try
@@ -785,7 +814,7 @@ class ProcessElement implements Runnable {
                        if (answers[0].isup() ||  answers[1].isup() || answers[2].isup())
                        {
 
-                           System.out.println(threadName + " **** sleep for 12 s.");   
+                           System.out.println(threadName + " **** sleep for 70 s.");   
                            try
                            {
                                //sleep(12000);
@@ -795,7 +824,7 @@ class ProcessElement implements Runnable {
                            {
                                e.printStackTrace();
                            }
-                           System.out.println(threadName + " **** end sleep for 12 s.");   
+                           System.out.println(threadName + " **** end sleep for 70 s.");   
 
 
 
@@ -1015,6 +1044,9 @@ class ElementFields{
      zone1_password ="";
      zone2_login="";
      zone2_password ="";
+     protected_owner ="";
+     protected_user ="";
+     protected_comment ="";
     }
     
     String  environmentName;
@@ -1035,6 +1067,8 @@ class ElementFields{
     String zone1_password ;
     String zone2_login;
     String zone2_password ;
-    
+    String protected_owner;
+    String protected_user;
+    String protected_comment;
 }
 
