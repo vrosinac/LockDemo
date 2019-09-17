@@ -79,7 +79,7 @@ public class LockDemo {
          TimeZone tz = c.getTimeZone();
          String stz = tz.getDisplayName();
          
-         sout = sout+"<br>" + "(last update: " +dtf.format(now) + " " + stz + ")<br> please reach jamesalexander.johnfuller@finastra.com, piotr.weglarz@finastra.com vincent.rosinach@finastra.com if the page stops refreshing<br><br>"; //2016/11/16 12:08:43
+         sout = sout+"<br>" + "(last update: " +dtf.format(now) + " " + stz + ")<br> please reach jamesalexander.johnfuller@finastra.com, piotr.weglarz@finastra.com vincent.rosinach@finastra.com if the page stops refreshing test<br><br>"; //2016/11/16 12:08:43
          sout = sout + "<style>table { font-size: 15px;} </style>";
          final HTMLGenerator myHTMLGenerator = new HTMLGenerator(new ReentrantLock(), sout); // Task to be executed by each thread 
             
