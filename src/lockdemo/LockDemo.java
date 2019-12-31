@@ -101,7 +101,7 @@ public class LockDemo {
 					+ dtf.format(now)
 					+ " "
 					+ stz
-					+ ")<br> please reach jamesalexander.johnfuller@finastra.com, piotr.weglarz@finastra.com or vincent.rosinach@finastra.com if the page stops refreshing<br><br>"; // 2016/11/16
+					+ ")<br> please reach jamesalexander.johnfuller@finastra.com, piotr.weglarz@finastra.com or vincent.rosinach@finastra.com if the page stops refreshing every 5 minutes<br><br>"; // 2016/11/16
 																																														// 12:08:43
 			sout = sout + "<style>table { font-size: 15px;} </style>";
 			final HTMLGenerator myHTMLGenerator = new HTMLGenerator(
@@ -132,7 +132,10 @@ public class LockDemo {
 					eltfields.environmentName = eElement
 							.getElementsByTagName("environmentName").item(0)
 							.getTextContent();
-
+					
+					if (eElement.getElementsByTagName("inuse") 	//loop that flter enviroments by 
+							.item(0) != null) {					//that what we already use 
+						
 					// the next three tags are optional
 					if (eElement.getElementsByTagName("protected_owner")
 							.item(0) != null) {
@@ -168,6 +171,9 @@ public class LockDemo {
 							.getTextContent();
 					eltfields.machine_name = eElement
 							.getElementsByTagName("machineName").item(0)
+							.getTextContent();
+                                        eltfields.comments = eElement
+							.getElementsByTagName("comments").item(0)
 							.getTextContent();
 					eltfields.url = eElement.getElementsByTagName("url")
 							.item(0).getTextContent();
@@ -221,6 +227,7 @@ public class LockDemo {
 
 				}
 
+			}
 			}
 			// checking termination
 			boolean end = false;
@@ -366,6 +373,7 @@ class ProcessElement implements Runnable {
 	String schema;
 	String env_name;
 	String machine_name;
+        String comments;
 	String url;
 	String login;
 	String password;
@@ -382,6 +390,7 @@ class ProcessElement implements Runnable {
 	String protected_owner;
 	String protected_user;
 	String protected_comment;
+	String inuse;
 
 	public ProcessElement(ElementFields elements, HTMLGenerator counter,
 			int myId) {
@@ -399,6 +408,7 @@ class ProcessElement implements Runnable {
 		schema = elements.schema;
 		env_name = elements.env_name;
 		machine_name = elements.machine_name;
+                comments = elements.comments;
 		url = elements.url;
 		// threadName = Thread.currentThread().getName();
 
@@ -459,7 +469,7 @@ class ProcessElement implements Runnable {
 		sout = sout + "<th>";
 		sout = sout + "<details align=\"left\"  >";
 		sout = sout + "<summary>" + retval.vers + "</summary>";
-		sout = sout + "<br>url : <a href=\"" + url + "\">" + url + "</a>";
+		sout = sout + "<br>" + comments + "<br><br>url : <a href=\"" + url + "\">" + url + "</a>";
 
 		if (protected_owner == null) // no need to keep it protected
 		{
@@ -736,6 +746,7 @@ class ProcessElement implements Runnable {
 				String sql = "SELECT DEPLOYMENT_ID, SOFTWARE_VERSION, CONNECTION_STATUS, LAST_UPDATED from "
 						+ schema + ".STS_DEPLOYMENT_SERVER";
 				// int a[]=new int[5];//declaration and instantiation
+                                System.out.println(threadName + " **** " + sql);
 				result answers[] = new result[3];
 				result rslt1 = new result(false, "", "");
 				// initialize to down in case we exit of the loops with
@@ -997,7 +1008,7 @@ class ProcessElement implements Runnable {
 											answers[0].vers,
 											answers[0].timeStamp);
 									System.out.println(threadName
-											+ " **** TI1's down ");
+											+ " **** TI1's down " + answers[0].timeStamp + " did not chnage");
 								}
 							} else {
 								if (rs2.getString(1).equals("TI2")) {// no need
@@ -1168,6 +1179,7 @@ class ElementFields {
 		schema = "";
 		env_name = "";
 		machine_name = "";
+                comments = "";
 		url = "";
 		login = "";
 		password = "";
@@ -1184,6 +1196,7 @@ class ElementFields {
 		protected_owner = "";
 		protected_user = "";
 		protected_comment = "";
+		inuse =""; 
 	}
 
 	String environmentName;
@@ -1191,6 +1204,7 @@ class ElementFields {
 	String schema;
 	String env_name;
 	String machine_name;
+        String comments;
 	String url;
 	String login;
 	String password;
@@ -1207,4 +1221,5 @@ class ElementFields {
 	String protected_owner;
 	String protected_user;
 	String protected_comment;
+	String inuse;
 }
