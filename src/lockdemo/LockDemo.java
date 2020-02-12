@@ -580,20 +580,8 @@ class ProcessElement implements Runnable {
 	// static protected result ConnectAndGetVersion(String threadName, String
 	// dbType, String url, String schema, String user, String password)
 	public result ConnectAndGetVersion(String threadName, String dbType,
-			String url, String schema, String user, String password) {// we
-																		// either
-																		// return
-																		// a
-																		// version
-																		// ....
-																		// or we
-																		// fail
-																		// which
-																		// means
-																		// we
-																		// could
-																		// not
-																		// connect
+			String url, String schema, String user, String password) {
+// we  either return a version ... or we fail which means we could not connect
 		String connectionString = "";
 		boolean doFirstPass = false;
 		boolean creatingJDBCObject = false;
@@ -610,14 +598,7 @@ class ProcessElement implements Runnable {
 				// Class.forName("net.sourceforge.jtds.jdbc.Driver");
 				System.out.println(threadName
 						+ " **** Called Class.forName(\"MsSQL server...");
-				// }
-				// catch (ClassNotFoundException e)
-				// {
-				// System.out.println(threadName +
-				// " **** Exceptopn in called Class.forName(\"MsSQL server...");
-				// e.toString();
-				// }
-
+				
 			}
 			if (dbType.equals("DB2") || dbType.equals("DB2ForTI229")) {
 				try {
@@ -663,31 +644,16 @@ class ProcessElement implements Runnable {
 			System.out.println(threadName + " url:" + url);
 
 			// Create the connection using the IBM Data Server Driver for JDBC
-			// and SQLJ
 			try {
 				sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			connectionString = /* "jdbc:" + dbType + */url; // "://C1WC1WC1229.misys.global.ad:50000/TIPLUS2";
-			// ADD the check DB2 / Oracle
-			// con = DriverManager.getConnection (connectionString,
-			// "TIGLOBAL28", "G10b@!123");
 
 			if (!user.isEmpty() && !password.isEmpty()
-					&& !connectionString.isEmpty()) {
-				/*
-				 * Driver d = new com.ibm.db2.jcc.DB2Driver();
-				 * if(!d.jdbcCompliant())
-				 * System.console().printf("jdbc driver is not ccompliant");
-				 * //DriverManager.registerDriver(new
-				 * COM.ibm.db2.jdbc.app.DB2Driver());
-				 * DriverManager.registerDriver(d);
-				 * if(!d.acceptsURL(connectionString)) throw new
-				 * SQLException("url \"" + url +
-				 * "\" is not accepted by jdbc driver");
-				 */
-
+					&& !connectionString.isEmpty()) 
+                        {
 				try {
 
 					con = DriverManager.getConnection(connectionString, user,
@@ -725,7 +691,6 @@ class ProcessElement implements Runnable {
 					System.out
 							.println(threadName
 									+ " **** EXCEPTION in Created 1st JDBC Statement object");
-					// e.getMessage();
 					e.printStackTrace();
 
 				}
@@ -745,12 +710,10 @@ class ProcessElement implements Runnable {
 
 				String sql = "SELECT DEPLOYMENT_ID, SOFTWARE_VERSION, CONNECTION_STATUS, LAST_UPDATED from "
 						+ schema + ".STS_DEPLOYMENT_SERVER";
-				// int a[]=new int[5];//declaration and instantiation
-                                System.out.println(threadName + " **** " + sql);
+			        System.out.println(threadName + " **** " + sql);
 				result answers[] = new result[3];
 				result rslt1 = new result(false, "", "");
-				// initialize to down in case we exit of the loops with
-				// exceptions
+				// initialize to down in case we exit of the loops with exceptions
 				rslt1.vers = "";
 				rslt1.timeStamp = "";
 				rslt1.up = false;
@@ -780,8 +743,7 @@ class ProcessElement implements Runnable {
 					doFirstPass = true;
 
 				} catch (Exception e) {
-					System.out
-							.println(threadName
+					System.out.println(threadName
 									+ " **** EXCEPTON executing sql statement 1st time ");
 					// e.toString();
 					e.toString();
@@ -907,7 +869,6 @@ class ProcessElement implements Runnable {
 					} catch (Exception e) {
 						System.out.println(threadName
 								+ " **** EXCEPTION in 1st pass ");
-						// e.toString();
 						e.printStackTrace();
 
 					}
@@ -1083,6 +1044,7 @@ class ProcessElement implements Runnable {
 										+ " **** no need for  sql statement 2nt time, nothing up ");
 						returnvalue = new result(false,
 								"&nbsp; &nbsp; system down", "");
+                                                // here system maybe up if Oracle
 						return returnvalue;
  
 					}
@@ -1131,23 +1093,20 @@ class ProcessElement implements Runnable {
 							countVisitors, ZoneVisitors, "" /* GlobalVisitors */);
 
 				} else {
-					// returnvalue = new result(areweup
-					// ,"(last time up: &nbsp; &nbsp;" +answers[2].timeStamp
-					// +") &nbsp; " + answers[0].vers + answers[1].vers +
-					// answers[2].vers , "" );
-					/*
-					 * String tst = answers[0].vers + answers[1].vers +
-					 * answers[2].vers; if(! tst.isEmpty()) {
-					 */
+				// HERE WE DO NOT SAYS SYSTEM DOWN IF 2ND PASS SAW THE SAME TIMESTAMP AND ORACLE
+                                    if (dbType.equals("Oracle"))
+                                    { 
 					returnvalue = new result(areweup,
+							 answers[0].vers
+									+ answers[1].vers + answers[2].vers, "");
+                                    }
+                                    else
+                                    {
+                                        returnvalue = new result(areweup,
 							"&nbsp; &nbsp; system down <br>" + answers[0].vers
 									+ answers[1].vers + answers[2].vers, "");
-					/*
-					 * } else { returnvalue = new result(areweup ,
-					 * "&nbsp; &nbsp; system down &nbsp; &nbsp;" +
-					 * answers[0].vers + answers[1].vers + answers[2].vers , ""
-					 * ); }
-					 */
+                                    
+                                    }
 				}
  
 			}
