@@ -36,6 +36,15 @@ public class LockDemo {
 		// Let's create a counter and shared it between three threads
 		// Since HTMLGenerator needs a lock to protect its getCount() method
 		// we are giving it a ReentrantLock.
+                try
+                {
+                
+                    FileHandler handler = new FileHandler("default.log");
+                    handler.setFormatter(new SimpleFormatter());
+                    Logger logger = Logger.getLogger("lockdemo");
+                    logger.addHandler(handler);
+                
+
 
 		String input ="elloe" ;
 		String output = "hello" ;
@@ -47,7 +56,7 @@ public class LockDemo {
 				  
 			} else {
 					
-					System.out.println("please provide xml file with list of environments");
+					logger.severe("please provide xml file with list of environments");
 					
 			}
 			if (!args[1].isEmpty()) {
@@ -55,37 +64,22 @@ public class LockDemo {
 			}
 			else {
 				
-				System.out.println("please provide name of output html file");
+				logger.severe("please provide name of output html file");
 				
 			}
 		}
 		else {
 			
-			System.out.println("please provide xml file with list of environments");
-			System.out.println("please provide name of output html file");
+			logger.severe("please provide xml file with list of environments");
+			logger.severe("please provide name of output html file");
 			System.exit(0);
 			
 		}
-                try
-                {
-                    FileHandler handler = new FileHandler("default.log");
-                    handler.setFormatter(new SimpleFormatter());
-                    Logger logger = Logger.getLogger("lockdemo");
-                    logger.addHandler(handler);
-                    logger.warning("warning message");
-                    logger.warning("warning message2");
-                          logger.warning("warning message");
-                }
-                
-                catch (Exception e) {
-                    System.out.println("Failed to configure logging to file");
-                }
-
                 
 		String sout = "";
 		try {
 
-			System.out.println("reading from: " + input + " writingn to: "
+			logger.info("reading from: " + input + " writingn to: "
 					+ output);
 
 			// Get Document Builder
@@ -101,7 +95,7 @@ public class LockDemo {
 
 			// Here comes the root node
 			Element root = document.getDocumentElement();
-			System.out.println(root.getNodeName());
+			logger.info(root.getNodeName());
 
 			// Get all envs
 			NodeList nList = document.getElementsByTagName("environment");
@@ -280,7 +274,7 @@ public class LockDemo {
 			}
 			while (end == false) {
 				end = true;
-				// System.out.println("checking termination");
+				// logger.info("checking termination");
 				for (int j = 0; j < size; j++) {
 					if (terminatedStatuses[j] == true) {
 						continue; // skip that one
@@ -288,10 +282,10 @@ public class LockDemo {
 					if (threads[j] != null) {
 						if (threads[j].getState() == Thread.State.TERMINATED
 								&& terminatedStatuses[j] == false) {
-							System.out.println("threads[" + j + "] terminated");
+							logger.info("threads[" + j + "] terminated");
 							terminatedStatuses[j] = true;
 						} else {
-							// System.out.println("threads[" +j
+							// logger.info("threads[" +j
 							// +"] not terminated");
 							end = false;
 						}
@@ -303,7 +297,7 @@ public class LockDemo {
 					}
 				}
 			}
-			System.out.println("all threads terminated");
+			logger.info("all threads terminated");
 			// FileWriter fileWriter = new
 			// FileWriter("c:/temp/samplefile2.html");
 			FileWriter fileWriter = new FileWriter(output);
@@ -313,6 +307,12 @@ public class LockDemo {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+                
+            }
+                
+            catch (Exception e) {
+                    System.out.println("Failed to configure logging to file");
+            }
 
 	}
 
@@ -495,39 +495,36 @@ class ProcessElement implements Runnable {
                 
                 //////$$//////////
                 //////////////////
-                System.out.println("inside DBBataLoader fot " + threadName);
+                Logger logger = Logger.getLogger("lockdemo");
+                logger.info("inside DBBataLoader fot " + threadName);
 
                 
                     this.dbType= dbType;
                     answers = new result[3];
 
-                    System.out.println(threadName + " url: " + url);
+                    logger.info(threadName + " url: " + url);
                     try {
-                            System.out.println(threadName + " **** Try ...");
 
                             if (dbType.equals("MsSQLServer")) {
-                                    System.out.println(threadName
+                                    logger.info(threadName
                                                     + " **** do not Try \"MsSQL server...");
 
                                     // try{
                                     // Class.forName("net.sourceforge.jtds.jdbc.Driver");
-                                    System.out.println(threadName
-                                                    + " **** Called Class.forName(\"MsSQL server...");
+                         //           logger.info(threadName
+                           //                         + " **** Called Class.forName(\"MsSQL server...");
 
                             }
                             if (dbType.equals("DB2") || dbType.equals("DB2ForTI229")) {
                                     try {
 
-                                            System.out.println(threadName
-                                                            + " **** Calling Class.forName(\"ibm...");
                                             ClassLoader cl = ClassLoader.getSystemClassLoader();;
                                             Class.forName("com.ibm.db2.jcc.DB2Driver", false,cl);
-                                            System.out.println(threadName
+                                            logger.info(threadName
                                                             + " **** Called Class.forName(\"ibm...");
 
                                     } catch (ClassNotFoundException e) {
-                                            System.out
-                                                            .println(threadName
+                                           logger.severe(threadName
                                                                             + " **** Exceptopn in called Class.forName(\"ibm...");
                                             e.toString();
                                     }
@@ -535,24 +532,19 @@ class ProcessElement implements Runnable {
                             if (dbType.equals("Oracle") || dbType.equals("OracleForTI25")) {
 
                                     try {
-                                        System.out.println(threadName
-                                                            + " **** Calling Class.forName(\"oracle...");
-
+                             
                                             ClassLoader cl = ClassLoader.getSystemClassLoader();;
                                             Class.forName("oracle.jdbc.driver.OracleDriver",false,cl);
-                                            System.out.println(threadName
+                                            logger.info(threadName
                                                             + " **** Called Class.forName(\"oracle...");
 
                                     } catch (ClassNotFoundException e) {
-                                            System.out
-                                                            .println(threadName
+                                            logger.severe(threadName
                                                                             + " **** Exceptopn in called Class.forName(\"oracle...");
                                             e.toString();
                                     }
 
                             }
-                            System.out.println(threadName + " url:" + url);
-
                             // Create the connection using the IBM Data Server Driver for JDBC
 
                             if (!user.isEmpty() && !password.isEmpty()
@@ -562,10 +554,10 @@ class ProcessElement implements Runnable {
 
                                             con = DriverManager.getConnection(url, user,
                                                             password);
-                                            System.out.println(threadName + " **** Got connection");
+                                            logger.info(threadName + " **** Got connection");
                                             creatingJDBCObject = true;
                                     } catch (Exception e) {
-                                            System.out.println(threadName
+                                            logger.info(threadName
                                                             + " **** EXCEPTION on connection  ");
                                             e.toString();
                                             returnvalue = new result(false,
@@ -587,18 +579,14 @@ class ProcessElement implements Runnable {
 
                             /////////////////**//////////
                             // Create the Statement
-                            System.out.println(threadName + " creating statement object");
-
+                            
                             if (creatingJDBCObject) {
                                     try {
-                                            System.out.println(threadName
-                                                            + " **** Creating 1st JDBC Statement object");
                                             stmt = con.createStatement();
-                                            System.out.println(threadName
-                                                            + " **** Created 1st JDBC Statement object");
+                                            logger.info(threadName
+                                                            + " **** Created JDBC Statement object");
                                     } catch (Exception e) {
-                                            System.out
-                                                            .println(threadName
+                                            logger.info(threadName
                                                                             + " **** EXCEPTION in Created 1st JDBC Statement object");
                                             e.printStackTrace();
 
@@ -622,28 +610,29 @@ class ProcessElement implements Runnable {
                 
             public boolean waitForRefreshPeriod()
             {	
-                System.out
-								.println(threadName + " **** sleep for 70 s.");
+                Logger logger = Logger.getLogger("lockdemo");
+                logger.info(threadName + " **** sleep for 70 s.");
                 try {
                         // sleep(12000);
                         sleep(70000);
                 } catch (InterruptedException e) {
                         e.printStackTrace();
                 }
-                System.out.println(threadName
+                logger.info(threadName
                                 + " **** end sleep for 70 s.");
                 return true;
             }
             
              public boolean DoPass1()
             {
-               System.out.println(threadName + " do pass 1");
+                Logger logger = Logger.getLogger("lockdemo");
+               logger.info(threadName + " do pass 1");
 
                 boolean success = false;
 				sqlSession = "SELECT DEPLOYMENT_ID, SOFTWARE_VERSION, CONNECTION_STATUS, LAST_UPDATED from "
 						+ schema + ".STS_DEPLOYMENT_SERVER";
                                 // profile that is not security officers to se the issue
-			        System.out.println(threadName + " **** " + sqlSession);
+			        logger.info(threadName + " **** " + sqlSession);
 				result rslt1 = new result(false, "", "");
 				// initialize to down in case we exit of the loops with exceptions
 				rslt1.vers = "";
@@ -666,16 +655,14 @@ class ProcessElement implements Runnable {
 							"");
 		//			return returnvalue;
 				}
-				System.out.println(threadName
-						+ " **** Executing sql statement 1st time ");
 				try {
 					rs1 = stmt.executeQuery(sqlSession);
-					System.out.println(threadName
-							+ " **** Executed sql statement 1st time ");
+					logger.info(threadName
+							+ " **** Executed sql statement ");
 					doFirstPass = true;
 
 				} catch (Exception e) {
-					System.out.println(threadName
+					logger.info(threadName
 									+ " **** EXCEPTON executing sql statement 1st time ");
 					// e.toString();
 					e.toString();
@@ -687,22 +674,15 @@ class ProcessElement implements Runnable {
 					e.printStackTrace();
 				}
 				if (doFirstPass) {
-					System.out.println(threadName
-							+ " **** starting first pass ");
-					// ---------------- first pass -------------------------
 					try {
 						while (rs1.next()) {
 
-							System.out.println(threadName
-									+ " **** inside first pass ");
-
-
 							if (rs1.getString(3).equals("CONNECTED")) {
 
-								System.out.println(threadName
-										+ " **** someuthing's up ");
+								logger.info(threadName
+										+ " **** something's up ");
 								if (rs1.getString(1).equals("TI1")) {
-									System.out.println(threadName
+									logger.info(threadName
 											+ " **** TI1's up ");
 
 									answers[0] = new result(true, "ZONE1: "
@@ -711,7 +691,7 @@ class ProcessElement implements Runnable {
 
 								} else {
 									if (rs1.getString(1).equals("TI2")) {
-										System.out.println(threadName
+										logger.info(threadName
 												+ " **** TI2's up ");
 
 										answers[1] = new result(true, "ZONE2: "
@@ -720,7 +700,7 @@ class ProcessElement implements Runnable {
 
 									} else // GLOBAL ???? and any 3rd zone ???
 									{
-										System.out.println(threadName
+										logger.info(threadName
 												+ " **** GLOBAL's up ");
 
 										answers[2] = new result(true,
@@ -734,7 +714,7 @@ class ProcessElement implements Runnable {
 							}
 						}
 					} catch (Exception e) {
-						System.out.println(threadName
+						logger.info(threadName
 								+ " **** EXCEPTION in 1st pass ");
 						e.printStackTrace();
 
@@ -748,11 +728,11 @@ class ProcessElement implements Runnable {
 
 					if (answers[0].isup() || answers[1].isup()
 							|| answers[2].isup()) {
-						System.out.println(threadName
+						logger.info(threadName
 								+ " **** finished first pass successfully");
                                                 success = true;
 					} else {
-						System.out.println(threadName
+						logger.info(threadName
 								+ " **** finished first pass UNsuccessfully");
 						returnvalue = new result(false,
 								"&nbsp; &nbsp; system down", "");
@@ -765,21 +745,15 @@ class ProcessElement implements Runnable {
             
             public boolean doPass2()
             {
-                
-               System.out.println(threadName + " do pass 2");
+                Logger logger = Logger.getLogger("lockdemo");
+               logger.info(threadName + " do pass 2");
                 boolean success = false;
 					// ------------------ second pass ------------------
 					if (answers[0].isup() || answers[1].isup()
 							|| answers[2].isup()) {
 
-					
-						/*
-						 * con2 = DriverManager.getConnection (connectionString,
-						 * user, password); System.out.println(threadName +
-						 * " **** Got 2nd connection");
-						 */
-						System.out.println(threadName
-								+ " **** Executing sql statement 2nd time ");
+						logger.info(threadName
+								+ " **** Executing sql statement 2nd pass ");
 
 					
                                                 
@@ -791,7 +765,7 @@ class ProcessElement implements Runnable {
                                                 try {
 							rs2 = stmt.executeQuery(sqlSession);
 
-							System.out.println(threadName
+							logger.info(threadName
 									+ " **** Executed sql statement 2nd time ");
 						
 
@@ -801,18 +775,12 @@ class ProcessElement implements Runnable {
                                                         e.printStackTrace();
                                                 }
 
-						System.out.println(threadName
-								+ " **** starting second pass ");
 						while (rs2.next()) {
-							System.out.println(threadName
-									+ " **** inside second pass ");
 			
 							if (rs2.getString(1).equals("TI1")) { // no need to
-																	// check if
-																	// it was
 																	// down on
 																	// 1st pass
-								System.out.println(threadName
+								logger.info(threadName
 										+ " **** checking for TI1 (2)");
 
 								if (!rs2.getString(4).equals(
@@ -821,19 +789,19 @@ class ProcessElement implements Runnable {
 									answers[0] = new result(true,
 											answers[0].vers,
 											answers[0].timeStamp);
-									System.out.println(threadName
+									logger.info(threadName
 											+ " **** TI1's up ");
 								} else {
 									answers[0] = new result(false,
 											answers[0].vers,
 											answers[0].timeStamp);
-									System.out.println(threadName
+									logger.info(threadName
 											+ " **** TI1's down " + answers[0].timeStamp + " did not chnage");
 								}
 							} else {
 								if (rs2.getString(1).equals("TI2")) {// no need
 																		// pass
-									System.out.println(threadName
+									logger.info(threadName
 											+ " **** checking for TI2 (2)");
 
 									if (!rs2.getString(4).equals(
@@ -842,18 +810,18 @@ class ProcessElement implements Runnable {
 										answers[1] = new result(true,
 												answers[1].vers,
 												answers[1].timeStamp);
-										System.out.println(threadName
+										logger.info(threadName
 												+ " **** TI2's up (2)");
 									} else {
 										answers[1] = new result(false,
 												answers[1].vers,
 												answers[1].timeStamp);
-										System.out.println(threadName
+										logger.info(threadName
 												+ " **** TI2's down (2)");
 									}
 								} else // GLOBAL and any 3rd zone....
 								{
-									System.out.println(threadName
+									logger.info(threadName
 											+ " **** checking for GLOBAL (2)");
 
 									if (!rs2.getString(4).equals(
@@ -863,13 +831,13 @@ class ProcessElement implements Runnable {
 										answers[2] = new result(true,
 												answers[2].vers,
 												answers[2].timeStamp);
-										System.out.println(threadName
+										logger.info(threadName
 												+ " **** GLOBAL's up (2)");
 									} else {
 										answers[2] = new result(false,
 												answers[2].vers,
 												answers[2].timeStamp);
-										System.out.println(threadName
+										logger.info(threadName
 												+ " **** GLOBAL's down (2)");
 									}
 
@@ -882,16 +850,14 @@ class ProcessElement implements Runnable {
 							}
 						}
                                             } catch (SQLException e) {
-							System.out
-									.println(threadName
+							logger.info(threadName
 											+ " **** Exception executing sql statement 2nd time ");
 
 							e.toString();
                                             }
-					}// /----------------- end second pass ---------------------
-					else {
-						System.out
-								.println(threadName
+					}
+                                        else {
+						logger.info(threadName
 										+ " **** no need for  sql statement 2nt time, nothing up ");
 						returnvalue = new result(false,
 								"&nbsp; &nbsp; system down", "");
@@ -903,8 +869,8 @@ class ProcessElement implements Runnable {
             }
             public boolean doCheckCOnnectedUsers()
             {
-                
-                 System.out.println(threadName + " doCheckCOnnectedUsers");
+                Logger logger = Logger.getLogger("lockdemo");   
+                 logger.info(threadName + " doCheckCOnnectedUsers");
 
 			boolean areweup = (answers[0].isup() || answers[1].isup() || answers[2]
 						.isup());
@@ -942,16 +908,15 @@ class ProcessElement implements Runnable {
 
 					// ////////// return values
 
-					System.out.println(threadName + " **** we're up ");
+					logger.info(threadName + " ****  " + countVisitors + " users connected");
 					returnvalue = new result(areweup, answers[0].vers
 							+ answers[1].vers + answers[2].vers, "",
 							countVisitors, ZoneVisitors, "" /* GlobalVisitors */);
 
 				} 
                                 catch (SQLException e) {
-							System.out
-									.println(threadName
-											+ " **** Exception executing sql statement 2nd time ");
+							logger.info(threadName
+											+ " **** Exception executing sql statement to check connected users ");
 
 							e.toString();
 				}
@@ -979,7 +944,8 @@ class ProcessElement implements Runnable {
             
              public void checkSupervisorPassword()
             {
-                 System.out.println(threadName + " getSupervisorPassword");
+                Logger logger = Logger.getLogger("lockdemo");
+                 logger.info(threadName + " getSupervisorPassword");
                  String sqlPassword = "select PASSWORD from "
                                                     + schema
                                                     + ".SS_USER "
@@ -1012,14 +978,13 @@ class ProcessElement implements Runnable {
                                     }
                                      
               
-                                    System.out.println(threadName + " password: " + supervisorPassword);
+                                    logger.info(threadName + " password: " + supervisorPassword);
                             }
                     }
 
                     catch (SQLException e) {
-                                            System.out
-                                                            .println(threadName
-                                                                            + " **** Exception executing sql to check teh password ");
+                                           logger.severe(threadName
+                                                                            + " **** Exception executing sql to check the password ");
 
                                             e.toString();
                 }
@@ -1030,7 +995,8 @@ class ProcessElement implements Runnable {
               public void resetSupervisorPassword()
             {
                 int  rs1;
-                 System.out.println(threadName + " resetSupervisorPassword");
+                Logger logger = Logger.getLogger("lockdemo");
+                 logger.info(threadName + " resetSupervisorPassword");
                  //UPDATE TIGLOBAL28.SS_USER SET PASSWORD='Lyprk456M21D8iXbKF/CXbyROxA=', ACCOUNT_ENABLED='1', PASSWORD_HISTORY='',  PASSWORD_RESET='0' WHERE USERNAME='SUPERVISOR';
 
                  String sqlPassword = "UPDATE " + schema 
@@ -1040,13 +1006,12 @@ class ProcessElement implements Runnable {
                     try{
                             rs1 = stmt.executeUpdate(sqlPassword);
                             
-                                    System.out.println(threadName + " supervisor password reset successfully");
+                                    logger.info(threadName + " supervisor password reset successfully");
                     }
                     
 
                     catch (SQLException e) {
-                                            System.out
-                                                            .println(threadName
+                                            logger.severe(threadName
                                                                             + " **** Exception executing sql to reset the password ");
 
                                             e.toString();
@@ -1065,7 +1030,8 @@ class ProcessElement implements Runnable {
         
 	public ProcessElement(ElementFields elements, HTMLGenerator counter,
 			int myId) {
-		id = myId;
+                Logger logger = Logger.getLogger("lockdemo");
+                id = myId;
                 
 		priorityEnvironment = elements.priorityEnvironment;
 		customizedEnvironment = elements.customizedEnvironment;
@@ -1075,7 +1041,7 @@ class ProcessElement implements Runnable {
 												// for this here as we want our
 												// own copy of this
 
-		System.out.println("DB url to pass to Thread" + id + ": "
+		logger.info("DB url to pass to Thread" + id + ": "
 				+ database_url);
 		database_type = elements.database_type; // we make sure we allocate
 												// memory for this here as we
@@ -1108,12 +1074,13 @@ class ProcessElement implements Runnable {
 	}
 
 	public void run() {
-		String sout;
+		Logger logger = Logger.getLogger("lockdemo");
+                String sout;
 		// get the tags to use ... done in constructor
 		// do some connection (twice) and prepare some HTML string
 
 		threadName = Thread.currentThread().getName();
-                System.out.println("run Thread" + threadName);
+                logger.info("run Thread" + threadName);
 		
                 try {
 			sleep(100);
@@ -1161,9 +1128,8 @@ class ProcessElement implements Runnable {
                 
                 DBDataLoader dbl = new DBDataLoader(threadName, database_type,
 				database_url, schema, global_login, global_password);
-                System.out.println(threadName + " DBDataLoader constructed");
-                    // logger.warning("warning message 4");
-                
+                logger.info(threadName + " DBDataLoader constructed");
+                    
                 if (dbl.DoPass1())
                 {
 
@@ -1307,8 +1273,8 @@ class ProcessElement implements Runnable {
 		// the string through all the threads)
 		myHTMLGenerator.addToHTMLString(sout);
 		// DEBUG TRACE ONLY
-		// System.out.println(myHTMLGenerator.getString());
-		System.out.println(threadName + " added the env HTML to HTMLGenerator");
+		// logger.info(myHTMLGenerator.getString());
+		logger.info(threadName + " added the env HTML to HTMLGenerator");
 
 	}
 
