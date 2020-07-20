@@ -136,13 +136,36 @@ public class LockDemo {
 					if (eElement.getElementsByTagName("inuse") 	//loop that flter enviroments by 
 							.item(0) != null) {					//that what we already use 
 						
-					// the next three tags are optional
+					// the next four tags are optional
 					if (eElement.getElementsByTagName("protected_owner")
 							.item(0) != null) {
 						eltfields.protected_owner = eElement
 								.getElementsByTagName("protected_owner")
 								.item(0).getTextContent();
 					}
+                                        
+                                        if (eElement.getElementsByTagName("prio")
+							.item(0) != null) {
+						eltfields.priorityEnvironment = eElement
+								.getElementsByTagName("prio")
+								.item(0).getTextContent();
+					}
+                                        
+                                        if (eElement.getElementsByTagName("customized")
+							.item(0) != null) {
+						eltfields.customizedEnvironment = eElement
+								.getElementsByTagName("customized")
+								.item(0).getTextContent();
+					}
+                                        
+                                        if (eElement.getElementsByTagName("customerdatabase")
+							.item(0) != null) {
+						eltfields.customerDatabase = eElement
+								.getElementsByTagName("customerdatabase")
+								.item(0).getTextContent();
+					}
+                                        
+                                        
 					if (eElement.getElementsByTagName("protected_user").item(0) != null) {
 						eltfields.protected_user = eElement
 								.getElementsByTagName("protected_user").item(0)
@@ -214,7 +237,7 @@ public class LockDemo {
 					runables[i] = new ProcessElement(eltfields,
 							myHTMLGenerator, i); // Ihave traces there in the
 													// constructor
-					// Creating the thread
+                                    	// Creating the thread
 					threads[i] = new Thread(runables[i], " Thread" + i); // not
 																			// sure
 																			// where
@@ -368,6 +391,9 @@ class ProcessElement implements Runnable {
 	/* static */protected ResultSet rs, rs1, rs2;
 	/* static */Connection con, con2;
 	String threadName;
+        String priorityEnvironment;
+        String customizedEnvironment;
+        String customerDatabase;
 	String environmentName;
 	String database_type;
 	String schema;
@@ -392,9 +418,639 @@ class ProcessElement implements Runnable {
 	String protected_comment;
 	String inuse;
 
+        class DBDataLoader
+        {
+            public boolean checkConnectedUsers(){
+                //check if there are people logged into the system
+                int countVisitors = 0;
+                String sqlZones = "select b.username,  b.IP_ADDRESS, a.ZONE_ID, a.created from "
+                                + schema
+                                + ".local_Session_details a, "
+                                + schema
+                                + ".central_Session_details b where  a.CENTRAL_ID  =  b.CENTRAL_ID  and  a.ZONE_ID IS NOT NULL and a.ENDED IS NULL ORDER BY ZONE_ID";
+                // String sqlGlobal =
+                // "select USERNAME, IP_ADDRESS, CREATED from " + schema +
+                // ".CENTRAL_SESSION_DETAILS where ENDED IS NULL ";
+                try{
+                    rs1 = stmt.executeQuery(sqlZones);
+                    String ZoneVisitors = "", GlobalVisitors = "";
+                    // check zones
+                    while (rs1.next()) {
+                            countVisitors++;
+                            ZoneVisitors = ZoneVisitors + rs1.getString(1)
+                                            + "&nbsp; " + rs1.getString(2) + "&nbsp; "
+                                            + rs1.getString(3) + "&nbsp; "
+                                            + rs1.getString(4) + "<br>";
+                    }
+
+                    returnvalue = new result(areweup, answers[0].vers
+                                    + answers[1].vers + answers[2].vers, "",
+                                    countVisitors, ZoneVisitors, "" /* GlobalVisitors */);
+
+                }    
+                catch (Exception e)
+                {
+                    //ignore
+                }
+                
+                return true;};
+            
+            private boolean areweup=false;
+            private String supervisorPassword="";
+           public String getSupervisorPassword(){
+                   return supervisorPassword;};
+            public result getResult(){ return returnvalue;};
+            private Connection con;
+            private Statement stmt, stmt2;
+            private result returnvalue;
+            private boolean creatingJDBCObject;
+            private String dbType;
+            private result answers[];
+	    private String sqlSession;	
+            private boolean doFirstPass =  false;
+            
+            /*threadName, database_type,
+				database_url, schema, global_login, global_password*/
+            public DBDataLoader(String threadName, String dbType, String url,String schema, String user, String password )
+            {
+                
+                //////$$//////////
+                //////////////////
+                System.out.println("inside DBBataLoader fot " + threadName);
+
+                
+                    this.dbType= dbType;
+                    answers = new result[3];
+
+                    System.out.println(threadName + " url: " + url);
+                    try {
+                            System.out.println(threadName + " **** Try ...");
+
+                            if (dbType.equals("MsSQLServer")) {
+                                    System.out.println(threadName
+                                                    + " **** do not Try \"MsSQL server...");
+
+                                    // try{
+                                    // Class.forName("net.sourceforge.jtds.jdbc.Driver");
+                                    System.out.println(threadName
+                                                    + " **** Called Class.forName(\"MsSQL server...");
+
+                            }
+                            if (dbType.equals("DB2") || dbType.equals("DB2ForTI229")) {
+                                    try {
+
+                                            System.out.println(threadName
+                                                            + " **** Calling Class.forName(\"ibm...");
+                                            ClassLoader cl = ClassLoader.getSystemClassLoader();;
+                                            Class.forName("com.ibm.db2.jcc.DB2Driver", false,cl);
+                                            System.out.println(threadName
+                                                            + " **** Called Class.forName(\"ibm...");
+
+                                    } catch (ClassNotFoundException e) {
+                                            System.out
+                                                            .println(threadName
+                                                                            + " **** Exceptopn in called Class.forName(\"ibm...");
+                                            e.toString();
+                                    }
+                            }
+                            if (dbType.equals("Oracle") || dbType.equals("OracleForTI25")) {
+
+                                    try {
+                                        System.out.println(threadName
+                                                            + " **** Calling Class.forName(\"oracle...");
+
+                                            ClassLoader cl = ClassLoader.getSystemClassLoader();;
+                                            Class.forName("oracle.jdbc.driver.OracleDriver",false,cl);
+                                            System.out.println(threadName
+                                                            + " **** Called Class.forName(\"oracle...");
+
+                                    } catch (ClassNotFoundException e) {
+                                            System.out
+                                                            .println(threadName
+                                                                            + " **** Exceptopn in called Class.forName(\"oracle...");
+                                            e.toString();
+                                    }
+
+                            }
+                            System.out.println(threadName + " url:" + url);
+
+                            // Create the connection using the IBM Data Server Driver for JDBC
+
+                            if (!user.isEmpty() && !password.isEmpty()
+                                            && !url.isEmpty()) 
+                            {
+                                try {
+
+                                            con = DriverManager.getConnection(url, user,
+                                                            password);
+                                            System.out.println(threadName + " **** Got connection");
+                                            creatingJDBCObject = true;
+                                    } catch (Exception e) {
+                                            System.out.println(threadName
+                                                            + " **** EXCEPTION on connection  ");
+                                            e.toString();
+                                            returnvalue = new result(false,
+                                                            "&nbsp; &nbsp; system down", "");
+                                    //	return returnvalue;
+
+                                            // e.printStackTrace();
+                                    }
+
+                                    try {
+                                            sleep(100);
+                                    } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                    }    
+                            } else {
+                                    returnvalue = new result(false, "&nbsp;  system down", "");
+                                    //return returnvalue;
+                            }
+
+                            /////////////////**//////////
+                            // Create the Statement
+                            System.out.println(threadName + " creating statement object");
+
+                            if (creatingJDBCObject) {
+                                    try {
+                                            System.out.println(threadName
+                                                            + " **** Creating 1st JDBC Statement object");
+                                            stmt = con.createStatement();
+                                            System.out.println(threadName
+                                                            + " **** Created 1st JDBC Statement object");
+                                    } catch (Exception e) {
+                                            System.out
+                                                            .println(threadName
+                                                                            + " **** EXCEPTION in Created 1st JDBC Statement object");
+                                            e.printStackTrace();
+
+                                    }
+
+                                    try {
+                                            sleep(100);
+                                    } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                    }
+
+                            }
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                
+                
+                
+            public boolean waitForRefreshPeriod()
+            {	
+                System.out
+								.println(threadName + " **** sleep for 70 s.");
+                try {
+                        // sleep(12000);
+                        sleep(70000);
+                } catch (InterruptedException e) {
+                        e.printStackTrace();
+                }
+                System.out.println(threadName
+                                + " **** end sleep for 70 s.");
+                return true;
+            }
+            
+             public boolean DoPass1()
+            {
+               System.out.println(threadName + " do pass 1");
+
+                boolean success = false;
+				sqlSession = "SELECT DEPLOYMENT_ID, SOFTWARE_VERSION, CONNECTION_STATUS, LAST_UPDATED from "
+						+ schema + ".STS_DEPLOYMENT_SERVER";
+                                // profile that is not security officers to se the issue
+			        System.out.println(threadName + " **** " + sqlSession);
+				result rslt1 = new result(false, "", "");
+				// initialize to down in case we exit of the loops with exceptions
+				rslt1.vers = "";
+				rslt1.timeStamp = "";
+				rslt1.up = false;
+
+				result rslt2 = new result(false, "", "");
+				rslt2.vers = "";
+				rslt2.timeStamp = "";
+				rslt2.up = false;
+				answers[0] = answers[1] = answers[2] = rslt1;
+
+				answers[0].populate(rslt1.up, rslt1.vers, rslt1.timeStamp);
+				answers[1].populate(rslt1.up, rslt1.vers, rslt1.timeStamp);
+				answers[2].populate(rslt1.up, rslt1.vers, rslt1.timeStamp);
+
+				if (dbType.equals("OracleForTI25")
+						|| dbType.equals("DB2ForTI229")) {
+					returnvalue = new result(true, "&nbsp; &nbsp; database up",
+							"");
+		//			return returnvalue;
+				}
+				System.out.println(threadName
+						+ " **** Executing sql statement 1st time ");
+				try {
+					rs1 = stmt.executeQuery(sqlSession);
+					System.out.println(threadName
+							+ " **** Executed sql statement 1st time ");
+					doFirstPass = true;
+
+				} catch (Exception e) {
+					System.out.println(threadName
+									+ " **** EXCEPTON executing sql statement 1st time ");
+					// e.toString();
+					e.toString();
+				}
+
+				try {
+					sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				if (doFirstPass) {
+					System.out.println(threadName
+							+ " **** starting first pass ");
+					// ---------------- first pass -------------------------
+					try {
+						while (rs1.next()) {
+
+							System.out.println(threadName
+									+ " **** inside first pass ");
+
+
+							if (rs1.getString(3).equals("CONNECTED")) {
+
+								System.out.println(threadName
+										+ " **** someuthing's up ");
+								if (rs1.getString(1).equals("TI1")) {
+									System.out.println(threadName
+											+ " **** TI1's up ");
+
+									answers[0] = new result(true, "ZONE1: "
+											+ rs1.getString(2) + "&nbsp;",
+											rs1.getString(4));
+
+								} else {
+									if (rs1.getString(1).equals("TI2")) {
+										System.out.println(threadName
+												+ " **** TI2's up ");
+
+										answers[1] = new result(true, "ZONE2: "
+												+ rs1.getString(2) + "&nbsp;",
+												rs1.getString(4));
+
+									} else // GLOBAL ???? and any 3rd zone ???
+									{
+										System.out.println(threadName
+												+ " **** GLOBAL's up ");
+
+										answers[2] = new result(true,
+												"GLOBAL: " + rs1.getString(2)
+														+ "&nbsp;",
+												rs1.getString(4));
+
+									}
+								}
+
+							}
+						}
+					} catch (Exception e) {
+						System.out.println(threadName
+								+ " **** EXCEPTION in 1st pass ");
+						e.printStackTrace();
+
+					}
+                                        
+                                        try {
+                                                sleep(100);
+                                        } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                        }
+
+					if (answers[0].isup() || answers[1].isup()
+							|| answers[2].isup()) {
+						System.out.println(threadName
+								+ " **** finished first pass successfully");
+                                                success = true;
+					} else {
+						System.out.println(threadName
+								+ " **** finished first pass UNsuccessfully");
+						returnvalue = new result(false,
+								"&nbsp; &nbsp; system down", "");
+						//return returnvalue;
+					}
+
+                                }
+                return  success;               
+            }
+            
+            public boolean doPass2()
+            {
+                
+               System.out.println(threadName + " do pass 2");
+                boolean success = false;
+					// ------------------ second pass ------------------
+					if (answers[0].isup() || answers[1].isup()
+							|| answers[2].isup()) {
+
+					
+						/*
+						 * con2 = DriverManager.getConnection (connectionString,
+						 * user, password); System.out.println(threadName +
+						 * " **** Got 2nd connection");
+						 */
+						System.out.println(threadName
+								+ " **** Executing sql statement 2nd time ");
+
+					
+                                                
+                                                try {
+                                                        sleep(100);
+                                                } catch (InterruptedException e) {
+                                                        e.printStackTrace();
+                                                }
+                                                try {
+							rs2 = stmt.executeQuery(sqlSession);
+
+							System.out.println(threadName
+									+ " **** Executed sql statement 2nd time ");
+						
+
+                                                try {
+                                                        sleep(100);
+                                                } catch (InterruptedException e) {
+                                                        e.printStackTrace();
+                                                }
+
+						System.out.println(threadName
+								+ " **** starting second pass ");
+						while (rs2.next()) {
+							System.out.println(threadName
+									+ " **** inside second pass ");
+			
+							if (rs2.getString(1).equals("TI1")) { // no need to
+																	// check if
+																	// it was
+																	// down on
+																	// 1st pass
+								System.out.println(threadName
+										+ " **** checking for TI1 (2)");
+
+								if (!rs2.getString(4).equals(
+										answers[0].timeStamp)
+										&& answers[0].isup()) {
+									answers[0] = new result(true,
+											answers[0].vers,
+											answers[0].timeStamp);
+									System.out.println(threadName
+											+ " **** TI1's up ");
+								} else {
+									answers[0] = new result(false,
+											answers[0].vers,
+											answers[0].timeStamp);
+									System.out.println(threadName
+											+ " **** TI1's down " + answers[0].timeStamp + " did not chnage");
+								}
+							} else {
+								if (rs2.getString(1).equals("TI2")) {// no need
+																		// pass
+									System.out.println(threadName
+											+ " **** checking for TI2 (2)");
+
+									if (!rs2.getString(4).equals(
+											answers[1].timeStamp)
+											&& answers[1].up == true) {
+										answers[1] = new result(true,
+												answers[1].vers,
+												answers[1].timeStamp);
+										System.out.println(threadName
+												+ " **** TI2's up (2)");
+									} else {
+										answers[1] = new result(false,
+												answers[1].vers,
+												answers[1].timeStamp);
+										System.out.println(threadName
+												+ " **** TI2's down (2)");
+									}
+								} else // GLOBAL and any 3rd zone....
+								{
+									System.out.println(threadName
+											+ " **** checking for GLOBAL (2)");
+
+									if (!rs2.getString(4).equals(
+											answers[2].timeStamp)
+											&& answers[2].up == true) {// no
+																		// pass
+										answers[2] = new result(true,
+												answers[2].vers,
+												answers[2].timeStamp);
+										System.out.println(threadName
+												+ " **** GLOBAL's up (2)");
+									} else {
+										answers[2] = new result(false,
+												answers[2].vers,
+												answers[2].timeStamp);
+										System.out.println(threadName
+												+ " **** GLOBAL's down (2)");
+									}
+
+								}
+							}
+							try {
+								sleep(100);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+                                            } catch (SQLException e) {
+							System.out
+									.println(threadName
+											+ " **** Exception executing sql statement 2nd time ");
+
+							e.toString();
+                                            }
+					}// /----------------- end second pass ---------------------
+					else {
+						System.out
+								.println(threadName
+										+ " **** no need for  sql statement 2nt time, nothing up ");
+						returnvalue = new result(false,
+								"&nbsp; &nbsp; system down", "");
+                                                // here system maybe up if Oracle
+						//return returnvalue;
+ 
+					}
+                                        return true;
+            }
+            public boolean doCheckCOnnectedUsers()
+            {
+                
+                 System.out.println(threadName + " doCheckCOnnectedUsers");
+
+			boolean areweup = (answers[0].isup() || answers[1].isup() || answers[2]
+						.isup());
+			if (areweup) {
+
+					// ----------------- 3rd pass -- to check if there are
+					// people logged into the system
+					int countVisitors = 0;
+					String sqlZones = "select b.username,  b.IP_ADDRESS, a.ZONE_ID, a.created from "
+							+ schema
+							+ ".local_Session_details a, "
+							+ schema
+							+ ".central_Session_details b where  a.CENTRAL_ID  =  b.CENTRAL_ID  and  a.ZONE_ID IS NOT NULL and a.ENDED IS NULL ORDER BY ZONE_ID";
+					// String sqlGlobal =
+					// "select USERNAME, IP_ADDRESS, CREATED from " + schema +
+					// ".CENTRAL_SESSION_DETAILS where ENDED IS NULL ";
+                                        
+                                        try {
+                                                sleep(100);
+                                        } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                        }    
+                                        try{
+                                        rs1 = stmt.executeQuery(sqlZones);
+					String ZoneVisitors = "", GlobalVisitors = "";
+					// check zones
+					
+                                        while (rs1.next()) {
+						countVisitors++;
+						ZoneVisitors = ZoneVisitors + rs1.getString(1)
+								+ "&nbsp; " + rs1.getString(2) + "&nbsp; "
+								+ rs1.getString(3) + "&nbsp; "
+								+ rs1.getString(4) + "<br>";
+					}
+
+					// ////////// return values
+
+					System.out.println(threadName + " **** we're up ");
+					returnvalue = new result(areweup, answers[0].vers
+							+ answers[1].vers + answers[2].vers, "",
+							countVisitors, ZoneVisitors, "" /* GlobalVisitors */);
+
+				} 
+                                catch (SQLException e) {
+							System.out
+									.println(threadName
+											+ " **** Exception executing sql statement 2nd time ");
+
+							e.toString();
+				}
+                                        } else {
+				// HERE WE DO NOT SAYS SYSTEM DOWN IF 2ND PASS SAW THE SAME TIMESTAMP AND ORACLE
+                                    if (dbType.equals("Oracle"))
+                                    { 
+					returnvalue = new result(areweup,
+							 answers[0].vers
+									+ answers[1].vers + answers[2].vers, "");
+                                    }
+                                    else
+                                    {
+                                        returnvalue = new result(areweup,
+							"&nbsp; &nbsp; system down <br>" + answers[0].vers
+									+ answers[1].vers + answers[2].vers, "");
+                                    
+                                    }
+				}
+                            return true;    
+			}
+
+            
+            
+            
+             public void checkSupervisorPassword()
+            {
+                 System.out.println(threadName + " getSupervisorPassword");
+                 String sqlPassword = "select PASSWORD from "
+                                                    + schema
+                                                    + ".SS_USER "
+                                                    + " WHERE USERNAME=\'SUPERVISOR\'";
+                    try{
+                            rs1 = stmt.executeQuery(sqlPassword);
+                            while (rs1.next()) {
+                                    String pwd =  rs1.getString(1);
+                                    
+                                    switch (pwd)
+                                            {
+                                    case "!A!Lyprk456M21D8iXbKF/CXbyROxA=":
+                                           supervisorPassword="SUPERVISOR1";
+                                           break;
+                                    case "!A!l2QL/skJDU5RwGpikCbp+Crc3Hw":  
+                                           supervisorPassword="SUPERVISOR2";
+                                           break;
+                                    case  "!A!EJxW8susFgscONF01wz/CPgGREU=":
+                                            supervisorPassword="SUPERVISOR3";
+                                            break;
+                                    case  "!A!hRUd++Fzhwe8ECaAzpcqtkz6X/Q=":
+                                        supervisorPassword="SUPERVISOR4";
+                                        break;
+                                    case "!A!fyxzTcaQRD3Y+r3lN6ll2UG+W7s='":
+                                        supervisorPassword="SUPERVISOR5";
+                                        break;
+                                    default:
+                                        supervisorPassword="NO IDEA";
+                                        break;
+                                    }
+                                     
+              
+                                    System.out.println(threadName + " password: " + supervisorPassword);
+                            }
+                    }
+
+                    catch (SQLException e) {
+                                            System.out
+                                                            .println(threadName
+                                                                            + " **** Exception executing sql to check teh password ");
+
+                                            e.toString();
+                }
+                
+            }
+             
+             
+              public void resetSupervisorPassword()
+            {
+                int  rs1;
+                 System.out.println(threadName + " resetSupervisorPassword");
+                 //UPDATE TIGLOBAL28.SS_USER SET PASSWORD='Lyprk456M21D8iXbKF/CXbyROxA=', ACCOUNT_ENABLED='1', PASSWORD_HISTORY='',  PASSWORD_RESET='0' WHERE USERNAME='SUPERVISOR';
+
+                 String sqlPassword = "UPDATE " + schema 
+                                                    + ".SS_USER "
+                                                    + "SET PASSWORD=\'Lyprk456M21D8iXbKF/CXbyROxA=\', ACCOUNT_ENABLED=\'1\', PASSWORD_HISTORY=\'\',  PASSWORD_RESET=\'0\'"    
+                                                    + " WHERE USERNAME=\'SUPERVISOR\'";
+                    try{
+                            rs1 = stmt.executeUpdate(sqlPassword);
+                            
+                                    System.out.println(threadName + " supervisor password reset successfully");
+                    }
+                    
+
+                    catch (SQLException e) {
+                                            System.out
+                                                            .println(threadName
+                                                                            + " **** Exception executing sql to reset the password ");
+
+                                            e.toString();
+                }
+                
+            } 
+             
+             
+            
+                //////////$//////////
+                /////////////////////
+                
+            }
+            
+        
+        
 	public ProcessElement(ElementFields elements, HTMLGenerator counter,
 			int myId) {
 		id = myId;
+                
+		priorityEnvironment = elements.priorityEnvironment;
+		customizedEnvironment = elements.customizedEnvironment;
+		customerDatabase = elements.customerDatabase;
 		environmentName = elements.environmentName;
 		database_url = elements.database_url; // we make sure we allocate memory
 												// for this here as we want our
@@ -438,10 +1094,21 @@ class ProcessElement implements Runnable {
 		// do some connection (twice) and prepare some HTML string
 
 		threadName = Thread.currentThread().getName();
+                System.out.println("run Thread" + threadName);
+		
+                try {
+			sleep(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+                
+                
 		sout = "<table style=\"width:100%\">";
 		sout = sout + "<colgroup>";
 		sout = sout
-				+ "<col  width=\"23%\" style=\"background-color:lightgrey\"  >";
+				+ "<col  width=\"2%\" style=\"background-color:white\"  >";
+                sout = sout
+				+ "<col  width=\"21%\" style=\"background-color:lightgrey\"  >";
 		sout = sout
 				+ "<col  width=\"25%\"  style=\"background-color:white\"  >";
 		// additioonal columsn for the visitors
@@ -450,13 +1117,59 @@ class ProcessElement implements Runnable {
 				+ "<col  width=\"45%\"  style=\"background-color:white\"  >";
 		sout = sout + "</colgroup>";
 
+                // ------@@@@@@@--  and add the first column with or without PRIO 
+                
+                if (priorityEnvironment != null) {
+                    sout = sout + "<th><img src=\"prio.png\" alt=\"prio\" width=\"20\" height=\"20\"> </th>";
+                }
+                else
+                {
+                    sout = sout + "<th></th>";
+                }
+                
+                
 		try {
 			sleep(100);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		result retval = ConnectAndGetVersion(threadName, database_type,
+                
+                /////////////////$$$//////////////
+                /*		result retval = ConnectAndGetVersion(threadName, database_type,
 				database_url, schema, global_login, global_password);
+                */
+                //////////////////////////////////
+                
+                DBDataLoader dbl = new DBDataLoader(threadName, database_type,
+				database_url, schema, global_login, global_password);
+                System.out.println(threadName + " DBDataLoader constructed");
+                
+                if (dbl.DoPass1())
+                {
+
+                    // now wait 60 s. and do it again to check if the timestamps
+                    // ave changed
+                    // we do that only if the fisrt time we got answers
+                    dbl.waitForRefreshPeriod();
+                    dbl.doPass2();
+                    dbl.doCheckCOnnectedUsers();
+                    dbl.checkSupervisorPassword();
+                }
+                 result retval=dbl.getResult();
+                 String pwd= dbl.getSupervisorPassword();
+                if( pwd.equals("NO IDEA"))
+                {//rest
+                
+                    dbl.resetSupervisorPassword();
+                }
+                
+                else
+                {
+                    password = pwd;
+                }
+                
+                
+                 
 		if (retval.up) {
 			sout = sout
 					+ "<th align=\"left\" style=\"background-color:lightgreen\" >"
@@ -469,7 +1182,9 @@ class ProcessElement implements Runnable {
 		sout = sout + "<th>";
 		sout = sout + "<details align=\"left\"  >";
 		sout = sout + "<summary>" + retval.vers + "</summary>";
-		sout = sout + "<br>" + comments + "<br><br>url : <a href=\"" + url + "\">" + url + "</a>";
+                sout = sout + "<br>customer database: " + customerDatabase;
+                sout = sout + "<br>customized: " + customizedEnvironment;
+                sout = sout + "<br>" + comments + "<br><br>url : <a href=\"" + url + "\">" + url + "</a>";
 
 		if (protected_owner == null) // no need to keep it protected
 		{
@@ -577,6 +1292,25 @@ class ProcessElement implements Runnable {
 
 	}
 
+        
+        
+        /*
+        
+        check supervisor password
+        unlock account TI
+UPDATE SS_USER SET PASSWORD='Lyprk456M21D8iXbKF/CXbyROxA=', ACCOUNT_ENABLED='1', PASSWORD_HISTORY='',  PASSWORD_RESET='0' WHERE USERNAME='SUPERVISOR';
+COMMIT; 
+        
+       SUPERVISOR1   'Lyprk456M21D8iXbKF/CXbyROxA=' 
+       SUPERVISOR2 !A!l2QL/skJDU5RwGpikCbp+Crc3Hw=
+       SUPERVISOR3  !A!EJxW8susFgscONF01wz/CPgGREU= 
+       SUPERVISOR4   !A!hRUd++Fzhwe8ECaAzpcqtkz6X/Q=
+       SUPERVISOR5  !A!fyxzTcaQRD3Y+r3lN6ll2UG+W7s=
+        
+        */
+        
+        
+        
 	// static protected result ConnectAndGetVersion(String threadName, String
 	// dbType, String url, String schema, String user, String password)
 	public result ConnectAndGetVersion(String threadName, String dbType,
@@ -710,6 +1444,7 @@ class ProcessElement implements Runnable {
 
 				String sql = "SELECT DEPLOYMENT_ID, SOFTWARE_VERSION, CONNECTION_STATUS, LAST_UPDATED from "
 						+ schema + ".STS_DEPLOYMENT_SERVER";
+                                // profile that is not security officers to se the issue
 			        System.out.println(threadName + " **** " + sql);
 				result answers[] = new result[3];
 				result rslt1 = new result(false, "", "");
@@ -778,25 +1513,6 @@ class ProcessElement implements Runnable {
 									System.out.println(threadName
 											+ " **** TI1's up ");
 
-									// answer = "ZONE1: " + rs1.getString(2); //
-									// /// if we have a global and several zone,
-									// then we potentaillay have more than 3
-									// versions to report
-									/*
-									 * rslt1.vers = "ZONE1: " +
-									 * rs1.getString(2); rslt1.timeStamp =
-									 * rs1.getString(3); rslt1.up = true;
-									 * answers[0] = rslt1;
-									 */
-
-									/*
-									 * rslt1.up = true; rslt1.vers = "ZONE1: " +
-									 * rs1.getString(2) + "&nbsp;";
-									 * rslt1.timeStamp = rs1.getString(4);
-									 */
-									// answers[0].populate( true, "ZONE1: " +
-									// rs1.getString(2) + "&nbsp;",
-									// rs1.getString(4));
 									answers[0] = new result(true, "ZONE1: "
 											+ rs1.getString(2) + "&nbsp;",
 											rs1.getString(4));
@@ -806,24 +1522,6 @@ class ProcessElement implements Runnable {
 										System.out.println(threadName
 												+ " **** TI2's up ");
 
-										// answer = rs1.getString(2); // /// if
-										// we have a global and several zone,
-										// then we potentaillay have more than 3
-										// versions to report
-										/*
-										 * rslt1.vers = "ZONE2: " +
-										 * rs1.getString(2); rslt1.timeStamp =
-										 * rs1.getString(3); rslt1.up = true;
-										 */
-										/*
-										 * rslt1.up = true; rslt1.vers =
-										 * "ZONE2: " + rs1.getString(2) +
-										 * "&nbsp;"; rslt1.timeStamp =
-										 * rs1.getString(4);
-										 */
-										// answers[1].populate(true , "ZONE2: "
-										// + rs1.getString(2) + "&nbsp;",
-										// rs1.getString(4));
 										answers[1] = new result(true, "ZONE2: "
 												+ rs1.getString(2) + "&nbsp;",
 												rs1.getString(4));
@@ -833,26 +1531,6 @@ class ProcessElement implements Runnable {
 										System.out.println(threadName
 												+ " **** GLOBAL's up ");
 
-										// answer = "GLOBAL: " +
-										// rs1.getString(2); // /// if we have a
-										// global and several zone, then we
-										// potentaillay have more than 3
-										// versions to report
-										/*
-										 * rslt1.vers = "GLOBAL: " +
-										 * rs1.getString(2); rslt1.timeStamp =
-										 * rs1.getString(4); rslt1.up = true;
-										 */
-										// answers[2] = rslt1;
-										/*
-										 * rslt1.vers = "GLOBAL: " +
-										 * rs1.getString(2) + "&nbsp;"; rslt1.up
-										 * = true; rslt1.timeStamp =
-										 * rs1.getString(4);
-										 */
-										// answers[2].populate(true, "GLOBAL: "
-										// + rs1.getString(2) + "&nbsp;",
-										// rs1.getString(4));
 										answers[2] = new result(true,
 												"GLOBAL: " + rs1.getString(2)
 														+ "&nbsp;",
@@ -1052,7 +1730,7 @@ class ProcessElement implements Runnable {
 
 				boolean areweup = (answers[0].isup() || answers[1].isup() || answers[2]
 						.isup());
-				if (areweup) {
+			if (areweup) {
 
 					// ----------------- 3rd pass -- to check if there are
 					// people logged into the system
@@ -1133,7 +1811,10 @@ class ProcessElement implements Runnable {
 class ElementFields {
 
 	public void ElementFields() {
-		environmentName = "";
+		priorityEnvironment = "";
+                customizedEnvironment = "";
+                customerDatabase = "";
+                environmentName = "";
 		database_type = "";
 		schema = "";
 		env_name = "";
@@ -1157,7 +1838,9 @@ class ElementFields {
 		protected_comment = "";
 		inuse =""; 
 	}
-
+        String priorityEnvironment;
+        String customizedEnvironment;
+        String customerDatabase;
 	String environmentName;
 	String database_type;
 	String schema;
