@@ -178,6 +178,26 @@ public class LockDemo {
 								.item(0).getTextContent();
 					}
                                         
+                                        if (eElement.getElementsByTagName("instructions")
+							.item(0) != null) {
+                                            
+						String instructions = eltfields.instructions = eElement
+								.getElementsByTagName("instructions")
+								.item(0).getTextContent();
+                                                instructions = instructions.replaceAll("(\r\n|\n)", "<br />");
+                                                eltfields.instructions = instructions;
+                                        }
+                                        
+                                        if (eElement.getElementsByTagName("folderlocations")
+							.item(0) != null) {
+                                            
+						String folderLocations =  eElement
+								.getElementsByTagName("folderlocations")
+								.item(0).getTextContent();
+                                                folderLocations = folderLocations.replaceAll("(\r\n|\n)", "<br />");
+                                                eltfields.folderLocations = folderLocations;
+                                        }
+                                        
                                         
 					if (eElement.getElementsByTagName("protected_user").item(0) != null) {
 						eltfields.protected_user = eElement
@@ -208,9 +228,13 @@ public class LockDemo {
 					eltfields.machine_name = eElement
 							.getElementsByTagName("machineName").item(0)
 							.getTextContent();
-                                        eltfields.comments = eElement
+                                        // change end of lines with <br> tags
+                                        String comments1= eElement
 							.getElementsByTagName("comments").item(0)
 							.getTextContent();
+                                        comments1 = comments1.replaceAll("(\r\n|\n)", "<br />");
+                                        eltfields.comments= comments1;       
+                                        
 					eltfields.url = eElement.getElementsByTagName("url")
 							.item(0).getTextContent();
 					eltfields.login = eElement.getElementsByTagName("login")
@@ -413,6 +437,8 @@ class ProcessElement implements Runnable {
         String priorityEnvironment;
         String customizedEnvironment;
         String customerDatabase;
+        String folderLocations;
+        String instructions;
 	String environmentName;
 	String database_type;
 	String schema;
@@ -495,6 +521,8 @@ class ProcessElement implements Runnable {
                 
                 //////$$//////////
                 //////////////////
+                /// initialize this one in case we crash
+                returnvalue = new result(false, "&nbsp;  system down", "");
                 Logger logger = Logger.getLogger("lockdemo");
                 logger.info("inside DBBataLoader fot " + threadName);
 
@@ -1036,6 +1064,9 @@ class ProcessElement implements Runnable {
 		priorityEnvironment = elements.priorityEnvironment;
 		customizedEnvironment = elements.customizedEnvironment;
 		customerDatabase = elements.customerDatabase;
+                instructions = elements.instructions;
+                folderLocations = elements.folderLocations;
+                
 		environmentName = elements.environmentName;
 		database_url = elements.database_url; // we make sure we allocate memory
 												// for this here as we want our
@@ -1089,21 +1120,27 @@ class ProcessElement implements Runnable {
 		}
                 
                 
+                //Create the HTML table and define the columns
 		sout = "<table style=\"width:100%\">";
 		sout = sout + "<colgroup>";
-		sout = sout
-				+ "<col  width=\"2%\" style=\"background-color:white\"  >";
-                sout = sout
-				+ "<col  width=\"21%\" style=\"background-color:lightgrey\"  >";
-		sout = sout
-				+ "<col  width=\"25%\"  style=\"background-color:white\"  >";
-		// additioonal columsn for the visitors
-		sout = sout + "<col  width=\"7%\"  style=\"background-color:white\"  >";
-		sout = sout
-				+ "<col  width=\"45%\"  style=\"background-color:white\"  >";
-		sout = sout + "</colgroup>";
-
-                // ------@@@@@@@--  and add the first column with or without PRIO 
+                                // the star for priority envs
+		sout = sout   + "<col  width=\"2%\" style=\"background-color:white\"  >";
+                            //// the environment title
+                sout = sout   + "<col  width=\"15%\" style=\"background-color:lightgrey\"  >";
+                            /// environment details
+		sout = sout   + "<col  width=\"25%\"  style=\"background-color:white\"  >";
+                           
+                            // system free or busy
+		sout = sout   + "<col  width=\"4%\"  style=\"background-color:white\"  >";
+                 // number of visitors
+		sout = sout   + "<col  width=\"10%\"  style=\"background-color:white\"  >";
+		sout = sout   + "</colgroup>";
+                // instructions
+                sout = sout   + "<col  width=\"25%\"  style=\"background-color:white\"  >";
+                            // folder locations
+                sout = sout   + "<col  width=\"19%\"  style=\"background-color:white\"  >";
+                           
+                // the first column: with or without PRIO  icon 
                 
                 if (priorityEnvironment != null) {
                     sout = sout + "<th><img src=\"prio.png\" alt=\"prio\" width=\"20\" height=\"20\"> </th>";
@@ -1125,7 +1162,7 @@ class ProcessElement implements Runnable {
 				database_url, schema, global_login, global_password);
                 */
                 //////////////////////////////////
-                
+                ///  conect to the atabase and get some information back
                 DBDataLoader dbl = new DBDataLoader(threadName, database_type,
 				database_url, schema, global_login, global_password);
                 logger.info(threadName + " DBDataLoader constructed");
@@ -1133,8 +1170,7 @@ class ProcessElement implements Runnable {
                 if (dbl.DoPass1())
                 {
 
-                    // now wait 60 s. and do it again to check if the timestamps
-                    // ave changed
+                    // now wait 60 s. and do it again to check if the timestamps have changed
                     // we do that only if the fisrt time we got answers
                     dbl.waitForRefreshPeriod();
                     dbl.doPass2();
@@ -1145,24 +1181,17 @@ class ProcessElement implements Runnable {
                  String pwd= dbl.getSupervisorPassword();
                 if( pwd.equals("NO IDEA"))
                 {//rest
-                
                     dbl.resetSupervisorPassword();
                 }
+                else {   password = pwd;  }
                 
-                else
-                {
-                    password = pwd;
-                }
-                
-                
-                 
+             
 		if (retval.up) {
 			sout = sout
 					+ "<th align=\"left\" style=\"background-color:lightgreen\" >"
 					+ environmentName + "</th>";
 		} else {
 			sout = sout + "<th align=\"left\" >" + environmentName + "</th>";
-			// RAJOUTER LA VERSION!!
 		}
 
 		sout = sout + "<th>";
@@ -1219,56 +1248,99 @@ class ProcessElement implements Runnable {
 		}
 		sout = sout + "</details>";
 		sout = sout + "</th>";
-		// // visitors/////////////////
-		if (retval.nVisitors > 0) {
+		
+                                
+      
+                // // visitors/////////////////
+		if (retval.nVisitors > 0) 
+                {
 			if (retval.nVisitors < 3) {
 				sout = sout
 						+ "<th align=\"left\" style=\"background-color:yellow\" >"
 						+ " &nbsp; busy &nbsp;    " + "</th>";
-				sout = sout + "<th>";
+				
 			}
 			if (retval.nVisitors >= 3 && retval.nVisitors <= 7) {
 				sout = sout
 						+ "<th align=\"left\" style=\"background-color:orange\" >"
 						+ " &nbsp; busy &nbsp;    " + "</th>";
-				sout = sout + "<th>";
+				
 			}
 			if (retval.nVisitors > 7) {
 				sout = sout
 						+ "<th align=\"left\" style=\"background-color:red\" >"
 						+ " &nbsp; busy &nbsp;    " + "</th>";
-				sout = sout + "<th>";
+				
 			}
+                        // less than 3 visitors, system free
+                        
 
+                        // the users themselves
+                        sout = sout + "<th>";
 			sout = sout + "<details align=\"left\"  >";
-			sout = sout + "<summary>" + "detail of users curently logged in"
+			sout = sout + "<summary>" + "users logged in"
 					+ "</summary>";
+			sout = sout  + retval.zoneVisitors + "</a>";
 			sout = sout + "<br>" + retval.globalVisitors + "</a>";
-			sout = sout + "<br>" + retval.zoneVisitors + "</a>";
-		} else { // only if the system is up and is not older than 2.8
+                        
+		} else {  //(only if the system is up and is not older than 2.8)
 			if (retval.up && (!retval.vers.equals("&nbsp; &nbsp; database up"))) {
 				sout = sout
 						+ "<th align=\"left\" style=\"background-color:lightgreen\" >"
 						+ " &nbsp; free &nbsp;    " + "</th>";
 				sout = sout + "<th>";
-				sout = sout + "<details align=\"left\"  >";
-				sout = sout + "<summary>" + "&nbsp;" + "</summary>";
-				sout = sout + "<br>" + "&nbsp;" + "</a>";
+				//sout = sout + "<details align=\"left\"  >";
+				//sout = sout + "<summary>" + "&nbsp;" + "</summary>";
+				//sout = sout + "<br>" + "&nbsp;" + "</a>";
 			} else {
 				sout = sout + "<th align=\"left\"  >" + " &nbsp;  &nbsp;    "
 						+ "</th>";
 				sout = sout + "<th>";
-				sout = sout + "<details align=\"left\"  >";
-				sout = sout + "<summary>" + "&nbsp;" + "</summary>";
-				sout = sout + "<br>" + "&nbsp;" + "</a>";
+				//sout = sout + "<details align=\"left\"  >";
+				//sout = sout + "<summary>" + "&nbsp;" + "</summary>";
+				//sout = sout + "<br>" + "&nbsp;" + "</a>";
 			}
 
 		}
+                
 		sout = sout + "</th>";
+                          // add the instructions column ONLY IF we have instructions to give
+                if (instructions != null)
+                {
+                        sout = sout + "<th><details align=\"left\"  >";
+			sout = sout + "<summary>" + "instructions"
+					+ "</summary>";
+			sout = sout  + instructions + " </a></th>";
+                }	    
+               else // to keep the columns in place
+                {
+                    sout = sout + "<th></th>";
+                }
+
+               // add the folder locations column ONLY IF we have locations to give
+               if(folderLocations != null)
+               {
+                        sout = sout + "<th><details align=\"left\"  >";
+			sout = sout + "<summary>" + "folder locations"
+					+ "</summary>";
+			sout = sout  + folderLocations +"</a></th>";
+			//sout = sout + "<br> sample tetxt </a>";
+               }
+               else // to keep the columns in place
+                {
+                    sout = sout + "<th></th>";
+                }
+
 
 		// ///////////////////////////
-
-		sout = sout + "</table >";
+        
+                        
+                        
+                        
+                        
+                
+                // close the HTML table
+                sout = sout + "</table >";
 		// add the text to the HTML string of the paage (on going building of
 		// the string through all the threads)
 		myHTMLGenerator.addToHTMLString(sout);
@@ -1287,6 +1359,8 @@ class ElementFields {
 		priorityEnvironment = "";
                 customizedEnvironment = "";
                 customerDatabase = "";
+                instructions="";
+                folderLocations="";
                 environmentName = "";
 		database_type = "";
 		schema = "";
@@ -1314,6 +1388,8 @@ class ElementFields {
         String priorityEnvironment;
         String customizedEnvironment;
         String customerDatabase;
+        String instructions;
+        String folderLocations;
 	String environmentName;
 	String database_type;
 	String schema;
